@@ -44,13 +44,34 @@ const addImageWatermarkToImage = async function (
 	}
 };
 
+const addImageModifications = async (mod, inputFile, outputFile) => {
+	const image = await Jimp.read(inputFile);
+
+	// image modification option
+	if (mod === 'make image brighter') {
+		image.brightness(0.5);
+		await image.quality(100).writeAsync(outputFile);
+	} else if (mod === 'increase contrast') {
+		image.contrast(0.2);
+		await image.quality(100).writeAsync(outputFile);
+	} else if (mod === 'make image b&w') {
+		image.greyscale();
+		await image.quality(100).writeAsync(outputFile);
+	} else if (mod === 'invert image') {
+		image.invert();
+		await image.quality(100).writeAsync(outputFile);
+	} else {
+		console.error('Something went wrong... Try again!');
+	}
+
+	return image;
+};
+
 const prepareOutputFilename = (filename) => {
 	const formatted = filename.split('.');
-
 	return `${formatted[0]}-with-watermark.${formatted[1]}`;
 };
 
-prepareOutputFilename('abc.jpg');
 const startApp = async () => {
 	// Ask if user is ready
 	const answer = await inquirer.prompt([
@@ -74,11 +95,27 @@ const startApp = async () => {
 			default: 'test.jpg',
 		},
 		{
+			name: 'imageModifications',
+			type: 'list',
+			choices: [
+				'make image brighter',
+				'increase contrast',
+				'make image b&w',
+				'invert image',
+			],
+		},
+		{
 			name: 'watermarkType',
 			type: 'list',
 			choices: ['Text watermark', 'Image watermark'],
 		},
 	]);
+
+	const modifiedImage = await addImageModifications(
+		options.imageModifications,
+		'./img/' + options.inputImage,
+		'./img/' + prepareOutputFilename(options.inputImage)
+	);
 
 	if (options.watermarkType === 'Text watermark') {
 		const text = await inquirer.prompt([
@@ -91,14 +128,14 @@ const startApp = async () => {
 		options.watermarkText = text.value;
 		if (fs.existsSync(`./img/${options.inputImage}`)) {
 			addTextWatermarkToImage(
-				'./img/' + options.inputImage,
+				modifiedImage,
 				'./img/' + prepareOutputFilename(options.inputImage),
 				options.watermarkText
 			);
 		} else {
 			console.log('Something went wrong... Try again');
 		}
-	} else {
+	} else if (options.watermarkType === 'Image watermark') {
 		const image = await inquirer.prompt([
 			{
 				name: 'filename',
@@ -113,7 +150,7 @@ const startApp = async () => {
 			fs.existsSync(`./img/${options.watermarkImage}`)
 		) {
 			addImageWatermarkToImage(
-				'./img/' + options.inputImage,
+				modifiedImage,
 				'./img/' + prepareOutputFilename(options.inputImage),
 				'./img/' + options.watermarkImage
 			);
