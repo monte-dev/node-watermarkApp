@@ -1,0 +1,12 @@
+{
+  "name": "watermarkNode",
+  "version": "1.0.0",
+  "description": "watermark-generator",
+  "main": "app.js",
+  "author": "monte-dev",
+  "license": "MIT",
+  "dependencies": {
+    "inquirer": "6.5.0",
+    "jimp": "0.6.4"
+  }
+}
